@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tainan Horizon | 府城極致探索平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root { --tainan-red: #C84B31; --tainan-amber: #D97706; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen flex flex-col">
+
+  <header class="bg-amber-900 text-amber-50 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="compass" class="w-7 h-7 text-amber-400"></i>
+        <span class="text-xl font-bold tracking-wide">Tainan Horizon <span class="text-xs font-normal bg-amber-800 px-2 py-0.5 rounded text-amber-200">府城極致探索</span></span>
+      </div>
+      <nav class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="#attractions" class="hover:text-amber-300 transition">熱門景點</a>
+        <a href="#night-market" class="hover:text-amber-300 transition">夜市口訣口算</a>
+        <a href="#itinerary" class="hover:text-amber-300 transition">行程規劃</a>
+      </nav>
+      <button class="bg-amber-500 text-stone-900 px-4 py-1.5 rounded-lg text-sm font-semibold">
+        GitHub Pages 版
+      </button>
+    </div>
+  </header>
+
+  <section class="bg-gradient-to-r from-amber-900 via-stone-900 to-red-950 text-white py-12 px-4 text-center">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-3xl md:text-5xl font-extrabold mb-4">探索府城沉浸式美學與風華</h1>
+      <p class="text-stone-300 text-base mb-6">從古蹟巡禮、巷弄美學到夜市美食，一站式打造屬於您的台南深度旅行策略。</p>
+    </div>
+  </section>
+
+  <section id="night-market" class="max-w-7xl mx-auto px-4 py-8 w-full">
+    <div class="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+      <div class="flex items-center space-x-3 mb-4">
+        <i data-lucide="utensils" class="text-red-600 w-6 h-6"></i>
+        <h2 class="text-2xl font-bold text-stone-900">台南夜市「大大武花大武花」即時查詢器</h2>
+      </div>
+      <div class="grid grid-cols-7 gap-2 mb-4 text-center font-bold">
+        <button onclick="checkNightMarket(1)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-1">一</button>
+        <button onclick="checkNightMarket(2)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-2">二</button>
+        <button onclick="checkNightMarket(3)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-3">三</button>
+        <button onclick="checkNightMarket(4)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-4">四</button>
+        <button onclick="checkNightMarket(5)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-5">五</button>
+        <button onclick="checkNightMarket(6)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-6">六</button>
+        <button onclick="checkNightMarket(0)" class="day-btn p-3 rounded-xl border hover:bg-amber-50" id="day-0">日</button>
+      </div>
+      <div id="night-market-result" class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-stone-800 font-medium">
+        請點擊上方星期按鈕查詢開賣夜市！
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-stone-900 text-stone-400 text-xs py-6 text-center mt-auto">
+    <p>Tainan Horizon © 2026 府城極致探索平台. Hosted on GitHub Pages.</p>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+    const nightMarketData = {
+      1: "大東夜市 / 大東東夜市",
+      2: "大東夜市 / 武聖夜市",
+      3: "武聖夜市 / 花園夜市",
+      4: "花園夜市 / 大東夜市",
+      5: "大東夜市 / 武聖夜市",
+      6: "花園夜市 / 武聖夜市",
+      0: "花園夜市 / 大東夜市"
+    };
+    function checkNightMarket(day) {
+      document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('bg-amber-500', 'text-stone-900'));
+      document.getElementById(`day-${day}`).classList.add('bg-amber-500', 'text-stone-900');
+      document.getElementById('night-market-result').innerHTML = `<strong>今天推薦開賣夜市：</strong> ${nightMarketData[day]}`;
+    }
+    checkNightMarket(new Date().getDay());
+  </script>
+</body>
+</html>
