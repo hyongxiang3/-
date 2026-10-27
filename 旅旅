@@ -1,0 +1,569 @@
+import React, { useState } from 'react';
+import { 
+  MapPin, Compass, Calendar, Award, BookOpen, Star, Filter, 
+  ChevronRight, Navigation, Clock, Search, Heart, Share2, 
+  CheckCircle2, Sparkles, Map, User, Shield, Layers, Coffee
+} from 'lucide-react';
+
+// --- DATA DEFINITIONS ---
+const DISTRICTS = [
+  { id: 'all', name: '全台南區' },
+  { id: 'central', name: '中西區 / 東區 (府城核心)' },
+  { id: 'anping', name: '安平區 (港灣歷史)' },
+  { id: 'coastal', name: '安南 / 七股 (濱海生態)' },
+  { id: 'mountain', name: '仁德 / 關子嶺 (文創山線)' }
+];
+
+const VIBES = [
+  { id: 'history', label: '📜 古蹟巡禮', color: 'bg-amber-100 text-amber-800' },
+  { id: 'nature', label: '🌊 濱海秘境', color: 'bg-emerald-100 text-emerald-800' },
+  { id: 'art', label: '🎨 現代光影', color: 'bg-indigo-100 text-indigo-800' },
+  { id: 'food', label: '🍜 美食地圖', color: 'bg-rose-100 text-rose-800' }
+];
+
+const ATTRACTIONS = [
+  {
+    id: 1,
+    title: '台南市美術館二館',
+    district: 'central',
+    vibe: 'art',
+    rating: 4.8,
+    reviews: 1240,
+    tags: ['極簡白建築', '碎形光影', '美照聖地'],
+    image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+    description: '由日本建築師坂茂設計，以鳳凰花為概念的五角形幾何屋頂，創造出如同樹蔭般的光影錯落。',
+    x: 48, y: 52,
+    nearbyFood: '度小月擔仔麵、林家白糖粿',
+    duration: '1.5 小時'
+  },
+  {
+    id: 2,
+    title: '赤崁樓與普城街區',
+    district: 'central',
+    vibe: 'history',
+    rating: 4.7,
+    reviews: 2100,
+    tags: ['荷治遺址', '文昌閣', '歷史地標'],
+    image: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=800&q=80',
+    description: '前身為荷蘭人建造的普羅民遮城，經歷清代與日治改建，為台南最有代表性的古蹟地標。',
+    x: 52, y: 46,
+    nearbyFood: '義豐冬瓜茶、山根壽司',
+    duration: '1 小時'
+  },
+  {
+    id: 3,
+    title: '漁光島月牙灣',
+    district: 'anping',
+    vibe: 'nature',
+    rating: 4.9,
+    reviews: 3100,
+    tags: ['絕美夕陽', '防風林秘境', '藝術季'],
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    description: '穿過木麻黃防風林後的半月形海灘，是台南觀賞落日與浪花的最美海岸海岸線。',
+    x: 25, y: 68,
+    nearbyFood: '文章牛肉湯、周氏蝦捲',
+    duration: '2 小時'
+  },
+  {
+    id: 4,
+    title: '四草綠色隧道',
+    district: 'coastal',
+    vibe: 'nature',
+    rating: 4.8,
+    reviews: 1850,
+    tags: ['台灣亞馬遜', '紅樹林生態', '觀光竹筏'],
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
+    description: '乘竹筏穿梭於百年紅樹林交織而成的綠色隧道，倒映著平靜水面，彷彿進入迷幻秘境。',
+    x: 30, y: 28,
+    nearbyFood: '同記安平豆花、水仙宮市場美食',
+    duration: '1.5 小時'
+  },
+  {
+    id: 5,
+    title: '奇美博物館',
+    district: 'mountain',
+    vibe: 'art',
+    rating: 4.9,
+    reviews: 4500,
+    tags: ['西洋藝術', '阿波羅噴泉', '西洋樂器'],
+    image: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80',
+    description: '繆思廣場與西洋古典風格宮殿建築，館藏豐富的西洋藝術、兵器與全球最大提琴收藏。',
+    x: 75, y: 78,
+    nearbyFood: '阿裕牛肉涮涮鍋、十鼓文創園區美食',
+    duration: '3 小時'
+  }
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('explore');
+  const [selectedDistrict, setSelectedDistrict] = useState('all');
+  const [selectedVibe, setSelectedVibe] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAttraction, setSelectedAttraction] = useState(ATTRACTIONS[0]);
+  const [itinerary, setItinerary] = useState([ATTRACTIONS[0], ATTRACTIONS[2]]);
+
+  // Filter Logic
+  const filteredAttractions = ATTRACTIONS.filter(item => {
+    const matchDistrict = selectedDistrict === 'all' || item.district === selectedDistrict;
+    const matchVibe = selectedVibe === 'all' || item.vibe === selectedVibe;
+    const matchSearch = item.title.includes(searchQuery) || item.tags.some(t => t.includes(searchQuery));
+    return matchDistrict && matchVibe && matchSearch;
+  });
+
+  const addToItinerary = (item) => {
+    if (!itinerary.find(i => i.id === item.id)) {
+      setItinerary([...itinerary, item]);
+    }
+  };
+
+  const removeFromItinerary = (id) => {
+    setItinerary(itinerary.filter(i => i.id !== id));
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFBF7] text-slate-800 font-sans">
+      {/* 1. TOP NAVBAR */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-amber-900/10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('explore')}>
+            <div className="w-10 h-10 rounded-xl bg-[#B23A22] flex items-center justify-center text-white font-serif font-bold text-xl shadow-md">
+              府
+            </div>
+            <div>
+              <span className="text-xl font-bold font-serif tracking-wide text-slate-900">Tainander</span>
+              <span className="text-xs block text-[#B23A22] font-semibold -mt-1">府城旅人文化平台</span>
+            </div>
+          </div>
+
+          <nav className="hidden md:flex space-x-1">
+            {[
+              { id: 'explore', label: '探索景點', icon: Compass },
+              { id: 'map', label: '地圖導覽', icon: Map },
+              { id: 'planner', label: '行程規劃', icon: Calendar },
+              { id: 'passport', label: '數位護照', icon: Award }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-amber-100/80 text-[#B23A22]' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center space-x-3">
+            <button className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:border-[#B23A22] hover:text-[#B23A22] transition-colors">
+              <Shield className="w-3.5 h-3.5 text-amber-600" />
+              <span>在地達人認證</span>
+            </button>
+            <button className="p-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">
+              <User className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTAINER */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* TAB 1: EXPLORE */}
+        {activeTab === 'explore' && (
+          <div className="space-y-8">
+            {/* HERO HERO SECTION */}
+            <div className="relative rounded-3xl overflow-hidden bg-slate-900 text-white p-8 md:p-12 shadow-2xl">
+              <div className="absolute inset-0 opacity-40 bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80')` }}></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent"></div>
+              
+              <div className="relative z-10 max-w-2xl space-y-4">
+                <span className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span> Top 5% 智慧旅人演算法</span>
+                </span>
+                <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight text-amber-50 leading-tight">
+                  不只是看景點，<br />深度融入府城歲月光影。
+                </h1>
+                <p className="text-slate-300 text-sm md:text-base leading-relaxed">
+                  結合情境過濾、在地巷弄路線與即時美食算力，為你訂製最優雅的台南行程。
+                </p>
+
+                {/* SEARCH BAR */}
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
+                    <input 
+                      type="text"
+                      placeholder="搜尋景點、關鍵字（例如：夕陽、赤崁樓、老屋）..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-white/10 backdrop-blur-md rounded-xl text-white placeholder-slate-400 border border-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FILTERS */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-[#B23A22]" />
+                  <span>主題與區域篩選</span>
+                </h2>
+              </div>
+
+              {/* DISTRICT BUTTONS */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {DISTRICTS.map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => setSelectedDistrict(d.id)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                      selectedDistrict === d.id
+                        ? 'bg-[#B23A22] text-white shadow-md'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* VIBE TAGS */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => setSelectedVibe('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                    selectedVibe === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  ✨ 全部情境
+                </button>
+                {VIBES.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVibe(v.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-transform active:scale-95 ${v.color} ${
+                      selectedVibe === v.id ? 'ring-2 ring-slate-800' : 'opacity-80'
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ATTRACTION CARDS GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAttractions.map(item => (
+                <div 
+                  key={item.id}
+                  className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                    <img 
+                      src={item.image} 
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-md text-slate-600 hover:text-rose-600 transition-colors">
+                      <Heart className="w-4 h-4" />
+                    </button>
+                    <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-md bg-slate-900/80 backdrop-blur-md text-white text-xs font-medium">
+                      ⏱️ 建議停留 {item.duration}
+                    </span>
+                  </div>
+
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
+                        <span className="text-[#B23A22] font-semibold">
+                          {DISTRICTS.find(d => d.id === item.district)?.name.split(' ')[0]}
+                        </span>
+                        <div className="flex items-center space-x-1 text-amber-600">
+                          <Star className="w-3.5 h-3.5 fill-amber-500" />
+                          <span>{item.rating} ({item.reviews})</span>
+                        </div>
+                      </div>
+
+                      <h3 className="text-lg font-bold font-serif text-slate-900 group-hover:text-[#B23A22] transition-colors">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-2 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                      <div className="flex items-center space-x-1 text-xs text-slate-500">
+                        <Coffee className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                        <span className="truncate">周邊隨身美食：{item.nearbyFood}</span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedAttraction(item);
+                            setActiveTab('map');
+                          }}
+                          className="flex-1 py-2 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center justify-center space-x-1"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>在地圖檢視</span>
+                        </button>
+                        <button 
+                          onClick={() => addToItinerary(item)}
+                          className="flex-1 py-2 px-3 rounded-lg bg-[#B23A22] text-white text-xs font-medium hover:bg-[#962f1a] flex items-center justify-center space-x-1 shadow-sm"
+                        >
+                          <span>+ 加入行程</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: INTERACTIVE MAP */}
+        {activeTab === 'map' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-10rem)]">
+            {/* CANVAS MAP */}
+            <div className="lg:col-span-2 bg-amber-50/50 rounded-2xl border border-amber-900/10 p-4 relative overflow-hidden flex flex-col justify-between shadow-inner">
+              <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 shadow-sm flex items-center space-x-2">
+                <Navigation className="w-4 h-4 text-[#B23A22]" />
+                <span>台南即時地理資訊系統 (GIS)</span>
+              </div>
+
+              {/* SIMULATED MAP SVG */}
+              <div className="relative w-full h-full min-h-[400px] flex items-center justify-center">
+                <svg className="w-full h-full max-h-[500px]" viewBox="0 0 100 100">
+                  {/* Rivers / Coastline */}
+                  <path d="M 10 0 Q 20 40 15 100" stroke="#93c5fd" strokeWidth="4" fill="none" opacity="0.6" />
+                  <path d="M 15 50 Q 50 45 100 60" stroke="#93c5fd" strokeWidth="2" fill="none" opacity="0.4" />
+                  
+                  {/* Regions */}
+                  <rect x="5" y="5" width="90" height="90" rx="10" fill="none" stroke="#e2e8f0" strokeDasharray="2" />
+                  
+                  {/* Markers */}
+                  {ATTRACTIONS.map(item => (
+                    <g key={item.id} className="cursor-pointer group" onClick={() => setSelectedAttraction(item)}>
+                      <circle 
+                        cx={item.x} 
+                        cy={item.y} 
+                        r={selectedAttraction.id === item.id ? "5" : "3.5"} 
+                        fill={selectedAttraction.id === item.id ? "#B23A22" : "#1e293b"}
+                        className="transition-all duration-300 group-hover:scale-125"
+                      />
+                      <circle 
+                        cx={item.x} 
+                        cy={item.y} 
+                        r={selectedAttraction.id === item.id ? "8" : "0"} 
+                        fill="#B23A22" 
+                        opacity="0.3"
+                        className="animate-ping"
+                      />
+                      <text 
+                        x={item.x} 
+                        y={item.y - 6} 
+                        textAnchor="middle" 
+                        fontSize="3" 
+                        fontWeight="bold"
+                        fill="#0f172a"
+                        className="pointer-events-none font-serif"
+                      >
+                        {item.title}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-md p-3 rounded-xl border border-slate-200 text-xs text-slate-500 flex justify-between items-center">
+                <span>點擊座標可查看該景點智慧動線與周邊美食</span>
+                <span className="font-mono text-amber-800">Tainan GIS v2.4</span>
+              </div>
+            </div>
+
+            {/* ATTRACTION DETAIL DRAWER */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm overflow-y-auto">
+              <div className="space-y-4">
+                <div className="aspect-video rounded-xl overflow-hidden bg-slate-100 relative">
+                  <img src={selectedAttraction.image} alt={selectedAttraction.title} className="w-full h-full object-cover" />
+                  <span className="absolute top-3 left-3 bg-[#B23A22] text-white px-2.5 py-1 rounded-md text-xs font-bold">
+                    {DISTRICTS.find(d => d.id === selectedAttraction.district)?.name}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold font-serif text-slate-900">{selectedAttraction.title}</h3>
+                  <div className="flex items-center space-x-2 mt-1 text-xs text-amber-600">
+                    <Star className="w-4 h-4 fill-amber-500" />
+                    <span className="font-bold">{selectedAttraction.rating}</span>
+                    <span className="text-slate-400">({selectedAttraction.reviews} 則在地評論)</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {selectedAttraction.description}
+                </p>
+
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/60 space-y-2">
+                  <div className="flex items-center space-x-2 text-xs font-bold text-amber-900">
+                    <Coffee className="w-4 h-4 text-[#B23A22]" />
+                    <span>智慧周邊美食串聯</span>
+                  </div>
+                  <p className="text-xs text-amber-800">
+                    {selectedAttraction.nearbyFood}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex gap-2">
+                <button 
+                  onClick={() => addToItinerary(selectedAttraction)}
+                  className="w-full py-2.5 bg-[#B23A22] text-white rounded-xl text-xs font-semibold hover:bg-[#962f1a] transition-colors shadow-sm"
+                >
+                  + 加入我的行程清單
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: ITINERARY PLANNER */}
+        {activeTab === 'planner' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-slate-900">我的台南自主漫遊行程</h2>
+                <p className="text-xs text-slate-500 mt-1">智慧算力已為你優化最佳順序與交通搭乘建議</p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-[#B23A22] text-xs font-bold">
+                已選 {itinerary.length} 個地點
+              </span>
+            </div>
+
+            {itinerary.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+                <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 font-medium text-sm">你的行程目前是空的</p>
+                <button 
+                  onClick={() => setActiveTab('explore')}
+                  className="mt-4 px-4 py-2 bg-[#B23A22] text-white text-xs font-semibold rounded-lg"
+                >
+                  去挑選景點
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {itinerary.map((item, idx) => (
+                  <div key={item.id} className="relative pl-8 pb-4">
+                    {/* TIMELINE LINE */}
+                    {idx < itinerary.length - 1 && (
+                      <div className="absolute left-3.5 top-8 bottom-0 w-0.5 bg-amber-200"></div>
+                    )}
+                    
+                    {/* TIMELINE DOT */}
+                    <div className="absolute left-0 top-1.5 w-7 h-7 rounded-full bg-[#B23A22] text-white text-xs font-bold flex items-center justify-center shadow-md">
+                      {idx + 1}
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex items-center space-x-4">
+                        <img src={item.image} alt={item.title} className="w-16 h-16 rounded-xl object-cover" />
+                        <div>
+                          <h4 className="font-serif font-bold text-slate-900">{item.title}</h4>
+                          <span className="text-xs text-slate-500">預計停留：{item.duration}</span>
+                          <p className="text-xs text-amber-800 mt-1">🍜 推薦順遊：{item.nearbyFood}</p>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => removeFromItinerary(item.id)}
+                        className="text-xs text-slate-400 hover:text-rose-600 transition-colors"
+                      >
+                        移除
+                      </button>
+                    </div>
+
+                    {/* TRANSPORT RECOMMENDATION */}
+                    {idx < itinerary.length - 1 && (
+                      <div className="my-2 ml-4 flex items-center space-x-2 text-[11px] text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-lg w-fit">
+                        <Navigation className="w-3 h-3 text-amber-700" />
+                        <span>建議交通：租借 YouBike 2.0 或騎乘機車 (約 12 分鐘)</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: PASSPORT & ACHIEVEMENTS */}
+        {activeTab === 'passport' && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="bg-gradient-to-br from-amber-900 to-slate-900 text-amber-50 p-8 rounded-3xl shadow-xl space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-xs text-amber-400 font-mono tracking-widest uppercase">Cultural Tourist Pass</span>
+                  <h2 className="text-2xl font-serif font-bold">府城深度探索護照</h2>
+                </div>
+                <Award className="w-10 h-10 text-amber-400" />
+              </div>
+
+              <div className="pt-4 flex items-center space-x-6 border-t border-amber-800/60">
+                <div>
+                  <div className="text-2xl font-bold font-mono">3 / 12</div>
+                  <div className="text-xs text-amber-300">解鎖勳章</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold font-mono">Lv. 2</div>
+                  <div className="text-xs text-amber-300">巷弄漫遊者</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { name: '古蹟尋蹤者', desc: '造訪赤崁樓與安平古堡', unlocked: true },
+                { name: '牛肉湯鑑賞家', desc: '解鎖 3 間在地牛肉湯', unlocked: true },
+                { name: '夕陽追逐者', desc: '於漁光島完成簽到', unlocked: true },
+                { name: '鹽田漫步者', desc: '造訪井仔腳瓦盤鹽田', unlocked: false },
+                { name: '老屋咖啡客', desc: '探索神農街老屋咖啡', unlocked: false },
+                { name: '藝術巡禮者', desc: '參觀南美館與奇美博物館', unlocked: false }
+              ].map((badge, idx) => (
+                <div 
+                  key={idx}
+                  className={`p-4 rounded-2xl border ${
+                    badge.unlocked 
+                      ? 'bg-white border-amber-300/80 shadow-sm' 
+                      : 'bg-slate-100/50 border-slate-200 opacity-60'
+                  } space-y-2`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-amber-100 text-[#B23A22] flex items-center justify-center font-bold text-sm">
+                    {badge.unlocked ? '✓' : '🔒'}
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900">{badge.name}</h4>
+                  <p className="text-xs text-slate-500">{badge.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+  );
+}
