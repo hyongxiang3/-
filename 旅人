@@ -1,0 +1,6 @@
+   npm create vite@latest tainander-platform -- --template react
+   cd tainander-platform
+   npm install lucide-react
+   npm install -D tailwindcss postcss autoprefixer
+   npx tailwindcss init -p
+   
